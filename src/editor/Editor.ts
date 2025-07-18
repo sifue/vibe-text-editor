@@ -348,14 +348,26 @@ export class Editor {
   private insertText(text: string): void {
     try {
       const position = this.cursor.getPosition();
-      Debug.logCursorPosition(position, this.buffer.getLine(position.row), 'InsertText');
+      const originalLine = this.buffer.getLine(position.row);
+      Debug.logCursorPosition(position, originalLine, 'InsertText-Before');
+      
+      // 挿入前の文字数を計算
+      const insertedCharCount = [...text].length; // Unicode文字数を正確に計算
       
       const command = new InsertTextCommand(this.buffer, position, text);
       this.undoRedoManager.executeCommand(command);
       
       // 挿入後のカーソル位置を正確に計算
       const updatedLine = this.buffer.getLine(position.row);
-      const newCol = position.col + text.length;
+      const newCol = position.col + insertedCharCount;
+      
+      // デバッグ情報を追加
+      if (Debug.isEnabled()) {
+        Debug.logKeyEvent('insertText', 
+          `text="${text}", charCount=${insertedCharCount}, oldCol=${position.col}, newCol=${newCol}`, 
+          'InsertText-Debug');
+      }
+      
       this.cursor.setPositionWithLine(position.row, newCol, updatedLine);
       
       Debug.logCursorPosition(this.cursor.getPosition(), updatedLine, 'InsertText-After');
@@ -367,6 +379,8 @@ export class Editor {
 
   private backspace(): void {
     const position = this.cursor.getPosition();
+    const originalLine = this.buffer.getLine(position.row);
+    Debug.logCursorPosition(position, originalLine, 'Backspace-Before');
     
     if (position.col > 0) {
       const deletePosition = { row: position.row, col: position.col - 1, displayCol: 0 };
@@ -377,7 +391,16 @@ export class Editor {
       // 削除後のカーソル位置を正確に計算
       const updatedLine = this.buffer.getLine(position.row);
       const newCol = position.col - 1;
+      
+      // デバッグ情報を追加
+      if (Debug.isEnabled()) {
+        Debug.logKeyEvent('backspace', 
+          `deletedText="${deletedText}", oldCol=${position.col}, newCol=${newCol}`, 
+          'Backspace-Debug');
+      }
+      
       this.cursor.setPositionWithLine(position.row, newCol, updatedLine);
+      Debug.logCursorPosition(this.cursor.getPosition(), updatedLine, 'Backspace-After');
     } else if (position.row > 0) {
       const previousLineLength = this.buffer.getLineLength(position.row - 1);
       const deletePosition = { row: position.row - 1, col: previousLineLength, displayCol: 0 };

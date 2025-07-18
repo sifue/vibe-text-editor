@@ -52,17 +52,20 @@ export class TextBufferManager implements TextBuffer {
     }
 
     const line = this.lines[position.row] || '';
-    const col = Math.min(position.col, line.length);
+    const lineChars = [...line]; // Unicode文字を正確に分割
+    const col = Math.min(position.col, lineChars.length);
 
     if (text === '\n') {
       // 改行の場合
-      const leftPart = line.substring(0, col);
-      const rightPart = line.substring(col);
+      const leftPart = lineChars.slice(0, col).join('');
+      const rightPart = lineChars.slice(col).join('');
       this.lines[position.row] = leftPart;
       this.lines.splice(position.row + 1, 0, rightPart);
     } else {
       // 通常のテキスト挿入
-      const newLine = line.substring(0, col) + text + line.substring(col);
+      const leftPart = lineChars.slice(0, col).join('');
+      const rightPart = lineChars.slice(col).join('');
+      const newLine = leftPart + text + rightPart;
       this.lines[position.row] = newLine;
     }
 
@@ -76,20 +79,25 @@ export class TextBufferManager implements TextBuffer {
     if (position.row >= this.lines.length) return;
 
     const line = this.lines[position.row] || '';
-    const col = Math.min(position.col, line.length);
+    const lineChars = [...line]; // Unicode文字を正確に分割
+    const col = Math.min(position.col, lineChars.length);
 
-    if (length === 1 && col < line.length) {
+    if (length === 1 && col < lineChars.length) {
       // 単一文字の削除
-      const newLine = line.substring(0, col) + line.substring(col + 1);
+      const leftPart = lineChars.slice(0, col).join('');
+      const rightPart = lineChars.slice(col + 1).join('');
+      const newLine = leftPart + rightPart;
       this.lines[position.row] = newLine;
-    } else if (length === 1 && col === line.length && position.row < this.lines.length - 1) {
+    } else if (length === 1 && col === lineChars.length && position.row < this.lines.length - 1) {
       // 行末での削除（次の行と結合）
       const nextLine = this.lines[position.row + 1] || '';
       this.lines[position.row] = line + nextLine;
       this.lines.splice(position.row + 1, 1);
     } else {
       // 複数文字の削除
-      const newLine = line.substring(0, col) + line.substring(col + length);
+      const leftPart = lineChars.slice(0, col).join('');
+      const rightPart = lineChars.slice(col + length).join('');
+      const newLine = leftPart + rightPart;
       this.lines[position.row] = newLine;
     }
 
@@ -103,14 +111,15 @@ export class TextBufferManager implements TextBuffer {
     if (position.row >= this.lines.length) return '';
 
     const line = this.lines[position.row] || '';
-    const col = Math.min(position.col, line.length);
+    const lineChars = [...line]; // Unicode文字を正確に分割
+    const col = Math.min(position.col, lineChars.length);
 
-    if (length === 1 && col < line.length) {
-      return line.charAt(col);
-    } else if (length === 1 && col === line.length && position.row < this.lines.length - 1) {
+    if (length === 1 && col < lineChars.length) {
+      return lineChars[col] || '';
+    } else if (length === 1 && col === lineChars.length && position.row < this.lines.length - 1) {
       return '\n';
     } else {
-      return line.substring(col, col + length);
+      return lineChars.slice(col, col + length).join('');
     }
   }
 
@@ -131,7 +140,8 @@ export class TextBufferManager implements TextBuffer {
 
   // 指定行の長さを取得
   getLineLength(row: number): number {
-    return this.getLine(row).length;
+    const line = this.getLine(row);
+    return [...line].length; // Unicode文字数を正確に計算
   }
 
   // 変更状態をリセット
