@@ -1,0 +1,31 @@
+{
+  "name": "vibe-text-editor",
+  "version": "1.0.0",
+  "description": "コンソールベースのテキストエディタ",
+  "main": "dist/index.js",
+  "bin": {
+    "cedit": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "clean": "rm -rf dist"
+  },
+  "keywords": ["console", "editor", "text", "terminal"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "blessed": "^0.1.81",
+    "blessed-contrib": "^4.11.0",
+    "chalk": "^4.1.2",
+    "commander": "^12.1.0",
+    "iconv-lite": "^0.6.3"
+  },
+  "devDependencies": {
+    "@types/blessed": "^0.1.25",
+    "@types/node": "^22.7.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
