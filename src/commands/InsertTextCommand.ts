@@ -55,7 +55,11 @@ export class InsertTextCommand implements EditCommand {
   }
 
   getCursorPosition(): CursorPosition {
-    return { ...this.position };
+    return { 
+      row: this.position.row, 
+      col: this.position.col, 
+      displayCol: this.position.displayCol || 0 
+    };
   }
 
   getType(): string {

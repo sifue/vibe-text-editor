@@ -234,9 +234,11 @@ export class Editor {
         this.quit();
         break;
       case 'C-z':
+        Debug.logKeyEvent('C-z', '', 'Editor-Undo');
         this.undo();
         break;
       case 'C-y':
+        Debug.logKeyEvent('C-y', '', 'Editor-Redo');
         this.redo();
         break;
       default:
@@ -394,6 +396,9 @@ export class Editor {
 
   // アンドゥ・リドゥ
   private undo(): void {
+    const debugInfo = this.undoRedoManager.getDebugInfo();
+    Debug.logKeyEvent('undo', `canUndo: ${debugInfo.undoCount > 0}, stack: ${debugInfo.undoCount}`, 'Editor-Undo-Debug');
+    
     const cursorPosition = this.undoRedoManager.undo();
     if (cursorPosition) {
       this.cursor.moveTo(cursorPosition);
@@ -406,6 +411,10 @@ export class Editor {
       } else {
         this.cursor.setPositionWithLine(cursorPosition.row, cursorPosition.col, line);
       }
+      
+      this.showStatusMessage('アンドゥしました');
+    } else {
+      this.showStatusMessage('アンドゥできません');
     }
   }
 
@@ -416,6 +425,9 @@ export class Editor {
   }
 
   private redo(): void {
+    const debugInfo = this.undoRedoManager.getDebugInfo();
+    Debug.logKeyEvent('redo', `canRedo: ${debugInfo.redoCount > 0}, stack: ${debugInfo.redoCount}`, 'Editor-Redo-Debug');
+    
     const cursorPosition = this.undoRedoManager.redo();
     if (cursorPosition) {
       this.cursor.moveTo(cursorPosition);
@@ -428,6 +440,10 @@ export class Editor {
       } else {
         this.cursor.setPositionWithLine(cursorPosition.row, cursorPosition.col, line);
       }
+      
+      this.showStatusMessage('リドゥしました');
+    } else {
+      this.showStatusMessage('リドゥできません');
     }
   }
 
