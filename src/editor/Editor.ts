@@ -3,6 +3,7 @@ import { Cursor } from './Cursor';
 import { Viewport } from './Viewport';
 import { Screen } from '../ui/Screen';
 import { FileIO } from '../utils/FileIO';
+import { TextUtils } from '../utils/TextUtils';
 import { UndoRedoManager } from '../commands/EditCommand';
 import { InsertTextCommand } from '../commands/InsertTextCommand';
 import { DeleteTextCommand } from '../commands/DeleteTextCommand';
@@ -258,7 +259,14 @@ export class Editor {
       this.cursor.moveUp();
       const newRow = this.cursor.getPosition().row;
       const line = this.buffer.getLine(newRow);
-      const newCol = Math.min(position.col, line.length);
+      
+      // 現在の表示位置を保持して、対応する文字位置を計算
+      const targetDisplayCol = position.displayCol;
+      const newCol = Math.min(
+        TextUtils.getCharIndexFromDisplayWidth(line, targetDisplayCol),
+        line.length
+      );
+      
       this.cursor.setPositionWithLine(newRow, newCol, line);
     }
   }
@@ -269,7 +277,14 @@ export class Editor {
       this.cursor.moveDown();
       const newRow = this.cursor.getPosition().row;
       const line = this.buffer.getLine(newRow);
-      const newCol = Math.min(position.col, line.length);
+      
+      // 現在の表示位置を保持して、対応する文字位置を計算
+      const targetDisplayCol = position.displayCol;
+      const newCol = Math.min(
+        TextUtils.getCharIndexFromDisplayWidth(line, targetDisplayCol),
+        line.length
+      );
+      
       this.cursor.setPositionWithLine(newRow, newCol, line);
     }
   }
@@ -339,10 +354,11 @@ export class Editor {
       this.undoRedoManager.executeCommand(command);
       
       // 挿入後のカーソル位置を正確に計算
-      const line = this.buffer.getLine(position.row);
-      this.cursor.moveRight(line);
+      const updatedLine = this.buffer.getLine(position.row);
+      const newCol = position.col + text.length;
+      this.cursor.setPositionWithLine(position.row, newCol, updatedLine);
       
-      Debug.logCursorPosition(this.cursor.getPosition(), line, 'InsertText-After');
+      Debug.logCursorPosition(this.cursor.getPosition(), updatedLine, 'InsertText-After');
     } catch (error) {
       Debug.logError(error as Error, 'InsertText');
       console.error(chalk.red('テキスト挿入中にエラーが発生しました:'), error);
@@ -359,8 +375,9 @@ export class Editor {
       this.undoRedoManager.executeCommand(command);
       
       // 削除後のカーソル位置を正確に計算
-      const line = this.buffer.getLine(position.row);
-      this.cursor.moveLeft(line);
+      const updatedLine = this.buffer.getLine(position.row);
+      const newCol = position.col - 1;
+      this.cursor.setPositionWithLine(position.row, newCol, updatedLine);
     } else if (position.row > 0) {
       const previousLineLength = this.buffer.getLineLength(position.row - 1);
       const deletePosition = { row: position.row - 1, col: previousLineLength, displayCol: 0 };
@@ -381,9 +398,17 @@ export class Editor {
       const deletedText = this.buffer.getText(position, 1);
       const command = new DeleteTextCommand(this.buffer, position, deletedText);
       this.undoRedoManager.executeCommand(command);
+      
+      // 削除後はカーソル位置はそのままだが、displayColを再計算
+      const updatedLine = this.buffer.getLine(position.row);
+      this.cursor.setPositionWithLine(position.row, position.col, updatedLine);
     } else if (position.row < this.buffer.getLineCount() - 1) {
       const command = new DeleteTextCommand(this.buffer, position, '\n');
       this.undoRedoManager.executeCommand(command);
+      
+      // 改行削除後はカーソル位置はそのままだが、displayColを再計算
+      const updatedLine = this.buffer.getLine(position.row);
+      this.cursor.setPositionWithLine(position.row, position.col, updatedLine);
     }
   }
 
@@ -391,6 +416,8 @@ export class Editor {
     const position = this.cursor.getPosition();
     const command = new InsertLineCommand(this.buffer, position);
     this.undoRedoManager.executeCommand(command);
+    
+    // 改行挿入後は次の行の先頭に移動
     this.cursor.setPosition(position.row + 1, 0, 0);
   }
 

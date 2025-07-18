@@ -119,11 +119,26 @@ export class TextUtils {
     
     for (const char of text) {
       const charWidth = this.getCharWidth(char);
+      
+      // 次の文字を追加すると目標幅を超える場合
       if (width + charWidth > targetWidth) {
+        // 現在位置と次の位置のどちらが目標に近いかを判定
+        const currentDistance = Math.abs(targetWidth - width);
+        const nextDistance = Math.abs(targetWidth - (width + charWidth));
+        
+        if (nextDistance < currentDistance) {
+          index++;
+        }
         break;
       }
+      
       width += charWidth;
       index++;
+      
+      // 正確に目標幅に達した場合
+      if (width === targetWidth) {
+        break;
+      }
     }
     
     return index;
