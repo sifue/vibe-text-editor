@@ -17,36 +17,72 @@ export class TextUtils {
     
     let width: number;
     
-    // 制御文字は幅0
+    // 制御文字は幅0（タブと改行は除く）
     if (code < 0x20) {
-      width = 0;
+      width = code === 0x09 ? 4 : 0; // タブは4文字分
     }
-    // よく使用される文字の高速判定
+    // ASCII文字は半角
     else if (code < 0x7F) {
-      // ASCII文字は半角
       width = 1;
     }
-    // 日本語文字の高速判定
+    // 全角スペース
+    else if (code === 0x3000) {
+      width = 2;
+    }
+    // 日本語文字の判定（WSL2対応）
     else if (
-      // CJK統合漢字（最も使用頻度が高い）
+      // CJK統合漢字
       (code >= 0x4E00 && code <= 0x9FFF) ||
-      // ひらがな・カタカナ
-      (code >= 0x3040 && code <= 0x30FF) ||
-      // 全角記号
-      (code >= 0xFF01 && code <= 0xFF5E)
+      // CJK統合漢字拡張A
+      (code >= 0x3400 && code <= 0x4DBF) ||
+      // ひらがな
+      (code >= 0x3040 && code <= 0x309F) ||
+      // カタカナ
+      (code >= 0x30A0 && code <= 0x30FF) ||
+      // 全角英数字・記号
+      (code >= 0xFF01 && code <= 0xFF5E) ||
+      // 半角カタカナ（実際は半角だが、WSL2では全角扱い）
+      (code >= 0xFF61 && code <= 0xFF9F)
     ) {
       width = 2;
     }
-    // その他の全角文字
+    // その他の東アジア文字
     else if (
+      // CJK記号・句読点
       (code >= 0x3000 && code <= 0x303F) ||
+      // CJK部首補助
       (code >= 0x2E80 && code <= 0x2EFF) ||
+      // 康熙部首
       (code >= 0x2F00 && code <= 0x2FDF) ||
-      (code >= 0x31C0 && code <= 0x31EF) ||
-      (code >= 0x3200 && code <= 0x32FF) ||
+      // CJK互換文字
       (code >= 0x3300 && code <= 0x33FF) ||
-      (code >= 0xF900 && code <= 0xFAFF) ||
-      (code >= 0xFE30 && code <= 0xFE4F)
+      // CJK統合漢字拡張B
+      (code >= 0x20000 && code <= 0x2A6DF) ||
+      // 囲み英数字
+      (code >= 0x2460 && code <= 0x24FF) ||
+      // 矢印
+      (code >= 0x2190 && code <= 0x21FF) ||
+      // 数学記号
+      (code >= 0x2200 && code <= 0x22FF) ||
+      // 幾何学記号
+      (code >= 0x25A0 && code <= 0x25FF) ||
+      // 装飾記号
+      (code >= 0x2600 && code <= 0x26FF)
+    ) {
+      width = 2;
+    }
+    // その他の文字（絵文字など）
+    else if (
+      // 絵文字
+      (code >= 0x1F600 && code <= 0x1F64F) ||
+      (code >= 0x1F300 && code <= 0x1F5FF) ||
+      (code >= 0x1F680 && code <= 0x1F6FF) ||
+      (code >= 0x1F700 && code <= 0x1F77F) ||
+      (code >= 0x1F780 && code <= 0x1F7FF) ||
+      (code >= 0x1F800 && code <= 0x1F8FF) ||
+      (code >= 0x1F900 && code <= 0x1F9FF) ||
+      (code >= 0x1FA00 && code <= 0x1FA6F) ||
+      (code >= 0x1FA70 && code <= 0x1FAFF)
     ) {
       width = 2;
     }

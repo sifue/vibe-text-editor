@@ -12,11 +12,28 @@ export class Screen {
   private infoBar: blessed.Widgets.BoxElement;
 
   constructor() {
+    // WSL2環境の検出
+    const isWSL = process.env['WSL_DISTRO_NAME'] !== undefined || 
+                  process.env['WSLENV'] !== undefined ||
+                  process.env['NAME']?.includes('Microsoft') ||
+                  process.platform === 'linux' && process.env['PATH']?.includes('Windows');
+    
     this.screen = blessed.screen({
       smartCSR: true,
       title: 'Vibe Text Editor',
       autoPadding: true,
-      dockBorders: true
+      dockBorders: true,
+      fullUnicode: true,
+      sendFocus: true,
+      useBCE: true,
+      tabSize: 4,
+      debug: false,
+      // WSL2環境での特別な設定
+      ...(isWSL && {
+        artificialCursor: true,
+        cursorBlink: true,
+        cursorShape: 'block'
+      })
     });
 
     // メインテキスト表示領域
@@ -33,6 +50,8 @@ export class Screen {
       mouse: true,
       keys: true,
       vi: false,
+      wrap: false,
+      shrink: false,
       style: {
         fg: 'white',
         bg: 'black',
