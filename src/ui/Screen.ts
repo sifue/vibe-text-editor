@@ -174,17 +174,57 @@ export class Screen {
     this.infoBar.setContent(content);
   }
 
+  // 状態メッセージを一時的に表示
+  private statusMessageTimeout: NodeJS.Timeout | null = null;
+  private originalInfoBarContent: string = '';
+
+  showStatusMessage(message: string): void {
+    // 既存のタイムアウトをクリア
+    if (this.statusMessageTimeout) {
+      clearTimeout(this.statusMessageTimeout);
+      this.statusMessageTimeout = null;
+    }
+
+    // 現在の情報バーの内容を保存
+    this.originalInfoBarContent = this.infoBar.getContent();
+    
+    // メッセージを表示
+    this.infoBar.setContent(message);
+    this.infoBar.style.bg = 'green';
+    this.screen.render();
+    
+    // 3秒後に元に戻す
+    this.statusMessageTimeout = setTimeout(() => {
+      this.infoBar.setContent(this.originalInfoBarContent);
+      this.infoBar.style.bg = 'blue';
+      this.screen.render();
+      this.statusMessageTimeout = null;
+    }, 3000);
+  }
+
   // キー入力をリッスン
   onKey(callback: (key: string, ch: string) => void): void {
-    // Ctrl+C の直接処理を追加
+    // 特殊キーの直接処理を追加
     this.screen.key(['C-c'], () => {
       callback('C-c', '');
     });
     
+    this.screen.key(['C-s'], () => {
+      callback('C-s', '');
+    });
+    
+    this.screen.key(['C-z'], () => {
+      callback('C-z', '');
+    });
+    
+    this.screen.key(['C-y'], () => {
+      callback('C-y', '');
+    });
+    
     // その他のキーイベント処理
     this.screen.on('keypress', (ch, key) => {
-      // Ctrl+C は上で処理済みなのでスキップ
-      if (key.name === 'C-c') return;
+      // 特殊キーは上で処理済みなのでスキップ
+      if (key.name === 'C-c' || key.name === 'C-s' || key.name === 'C-z' || key.name === 'C-y') return;
       callback(key.name, ch);
     });
   }

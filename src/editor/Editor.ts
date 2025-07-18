@@ -9,6 +9,7 @@ import { DeleteTextCommand } from '../commands/DeleteTextCommand';
 import { InsertLineCommand } from '../commands/InsertLineCommand';
 import { Debug } from '../utils/Debug';
 import chalk from 'chalk';
+import * as path from 'path';
 
 // エディタオプション
 interface EditorOptions {
@@ -226,6 +227,7 @@ export class Editor {
         this.insertNewline();
         break;
       case 'C-s':
+        Debug.logKeyEvent('C-s', '', 'Editor-Save');
         this.save();
         break;
       case 'C-c':
@@ -407,6 +409,12 @@ export class Editor {
     }
   }
 
+  // 状態メッセージを表示
+  private showStatusMessage(message: string): void {
+    // 画面の下部に短時間メッセージを表示
+    this.screen.showStatusMessage(message);
+  }
+
   private redo(): void {
     const cursorPosition = this.undoRedoManager.redo();
     if (cursorPosition) {
@@ -425,8 +433,12 @@ export class Editor {
 
   // ファイル保存
   private async save(): Promise<void> {
+    Debug.logKeyEvent('save', 'method-called', 'Editor-Save-Method');
+    
     if (!this.filePath) {
-      return; // ファイル名が指定されていない場合は何もしない
+      // ファイル名が指定されていない場合は状態行にメッセージを表示
+      this.showStatusMessage('ファイル名が指定されていません');
+      return;
     }
 
     try {
@@ -435,12 +447,16 @@ export class Editor {
       this.buffer.resetModified();
       Debug.endTimer('Save');
       
-      // 保存完了をユーザーに知らせる（デバッグ時のみ）
+      // 保存完了をユーザーに知らせる（常に表示）
+      this.showStatusMessage(`保存しました: ${path.basename(this.filePath)}`);
+      
+      // デバッグ時はより詳細な情報を表示
       if (Debug.isEnabled()) {
         console.log(chalk.green(`ファイルを保存しました: ${this.filePath}`));
       }
     } catch (error) {
       Debug.logError(error as Error, 'Save');
+      this.showStatusMessage(`保存に失敗しました: ${(error as Error).message}`);
       console.error(chalk.red('保存に失敗しました:'), error);
     }
   }
